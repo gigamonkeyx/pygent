@@ -5,30 +5,47 @@ import path from 'path'
 // https://vitejs.dev/config/
 export default defineConfig({
   plugins: [react()],
-  root: '.',
-  publicDir: 'public',
+  base: '/pygent/',  // Important: Base path for subdirectory deployment
   resolve: {
     alias: {
       '@': path.resolve(__dirname, './src'),
     },
   },
-  server: {
-    port: 5173,
-    host: '0.0.0.0',
-    proxy: {
-      '/api': {
-        target: 'http://localhost:8080',
-        changeOrigin: true,
-      },
-      '/ws': {
-        target: 'ws://localhost:8080',
-        ws: true,
-        changeOrigin: true,
-      },
-    },
-  },
   build: {
     outDir: 'dist',
     sourcemap: true,
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          vendor: ['react', 'react-dom', 'react-router-dom'],
+          ui: ['@radix-ui/react-dialog', '@radix-ui/react-dropdown-menu', '@radix-ui/react-select'],
+          utils: ['zustand', '@tanstack/react-query']
+        }
+      }
+    },
+    chunkSizeWarningLimit: 1000
   },
+  server: {
+    port: 3000,
+    host: true,
+    proxy: {
+      '/api': {
+        target: 'http://localhost:8000',
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/api/, '')
+      },
+      '/ws': {
+        target: 'ws://localhost:8000',
+        ws: true,
+        changeOrigin: true
+      }
+    }
+  },
+  preview: {
+    port: 3000,
+    host: true
+  },
+  define: {
+    __APP_VERSION__: JSON.stringify(process.env.npm_package_version || '1.0.0'),
+  }
 })
